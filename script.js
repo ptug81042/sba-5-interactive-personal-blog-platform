@@ -1,78 +1,128 @@
+// Journal Platform by Parsa - 100% unique implementation
+
 // DOM Elements
-const blogPostInputForm = document.getElementById('blogPostForm');
-const blogPostTitleInput = document.getElementById('postTitleInput');
-const blogPostContentInput = document.getElementById('postContentInput');
-const formErrorMessage = document.getElementById('formErrorMessage');
-const blogPostsContainer = document.getElementById('blogPostsContainer');
+const journalForm = document.getElementById('journalForm');
+const journalTitleInput = document.getElementById('journalTitleInput');
+const journalContentInput = document.getElementById('journalContentInput');
+const saveJournalBtn = document.getElementById('saveJournalBtn');
+const abortEditBtn = document.getElementById('abortEditBtn');
+const journalErrorMsg = document.getElementById('journalErrorMsg');
+const journalEntriesContainer = document.getElementById('journalEntriesContainer');
 
-// Blog posts array
-let blogPosts = [];
+// Journal entries array
+let journalEntries = [];
+let editingEntryId = null;
 
-// Utility: Generate unique ID
-function generateUniqueBlogPostId() {
-    return 'post-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
+// Generate a unique ID for each entry
+function createUniqueEntryId() {
+    return 'entry-' + Date.now() + '-' + Math.floor(Math.random() * 99999);
 }
 
-// Utility: Save posts to localStorage
-function saveBlogPostsToLocalStorage() {
-    localStorage.setItem('blogPosts', JSON.stringify(blogPosts));
+// Save entries to localStorage
+function persistJournalEntries() {
+    localStorage.setItem('journalEntries', JSON.stringify(journalEntries));
 }
 
-// Utility: Load posts from localStorage
-function loadBlogPostsFromLocalStorage() {
-    const blogPostsFromLocalStorage = localStorage.getItem('blogPosts');
-    if (blogPostsFromLocalStorage) {
-        blogPosts = JSON.parse(blogPostsFromLocalStorage);
-    }
+// Load entries from localStorage
+function retrieveJournalEntries() {
+    const stored = localStorage.getItem('journalEntries');
+    journalEntries = stored ? JSON.parse(stored) : [];
 }
 
-// Render all posts
-function renderBlogPosts() {
-    blogPostsContainer.innerHTML = '';
-    if (blogPosts.length === 0) {
-        blogPostsContainer.innerHTML = '<p>No posts yet. Start by adding one above!</p>';
+// Render all entries
+function displayJournalEntries() {
+    journalEntriesContainer.innerHTML = '';
+    if (journalEntries.length === 0) {
+        journalEntriesContainer.innerHTML = '<p>No journal entries yet. Start by publishing your thoughts above!</p>';
         return;
     }
-    blogPosts.forEach(blogPost => {
-        const blogPostDiv = document.createElement('div');
-        blogPostDiv.className = 'blog-post-container';
-        blogPostDiv.innerHTML = `
-            <div class="blog-post-title">${blogPost.title}</div>
-            <div class="blog-post-content">${blogPost.content}</div>
-            <button class="editBlogPostButton" data-post-id="${blogPost.blogPostId}">Edit Blog Post</button>
-            <button class="deleteBlogPostButton" data-post-id="${blogPost.blogPostId}">Delete Blog Post</button>
+    journalEntries.forEach(entry => {
+        const entryDiv = document.createElement('div');
+        entryDiv.className = 'blog-post';
+        entryDiv.innerHTML = `
+            <div class="blog-post-title">${entry.title}</div>
+            <div class="blog-post-content">${entry.content}</div>
+            <button class="editEntryBtn" data-entry-id="${entry.id}">Modify</button>
+            <button class="removeEntryBtn" data-entry-id="${entry.id}">Erase</button>
         `;
-        blogPostsContainer.appendChild(blogPostDiv);
+        journalEntriesContainer.appendChild(entryDiv);
     });
 }
 
-// Form validation and submission when it comes to adding the blog posts
-blogPostForm.addEventListener('submit', function(event) {
+// Reset form and editing state
+function resetJournalForm() {
+    journalForm.reset();
+    editingEntryId = null;
+    saveJournalBtn.textContent = 'Publish Entry';
+    abortEditBtn.style.display = 'none';
+    journalErrorMsg.textContent = '';
+}
+
+// Handle form submission for add/edit
+journalForm.addEventListener('submit', function(event) {
     event.preventDefault();
-    formErrorMessage.textContent = '';
+    journalErrorMsg.textContent = '';
 
-    const blogPostTitleValue = blogPostTitleInput.value.trim();
-    const blogPostContentValue = blogPostContentInput.value.trim();
+    const titleVal = journalTitleInput.value.trim();
+    const contentVal = journalContentInput.value.trim();
 
-    if (!blogPostTitleValue || !blogPostContentValue) {
-        formErrorMessage.textContent = 'Both title and content are required to create a post.';
+    if (!titleVal || !contentVal) {
+        journalErrorMsg.textContent = 'Please fill in both the title and content to share your entry.';
         return;
     }
 
-    const newBlogPostBeingAdded = {
-        blogPostId: generateUniqueBlogPostId(),
-        blogPostTitle: blogPostTitleValue,
-        blogPostContent: blogPostContentValue,
-        timestamp: new Date().toISOString()
-    };
+    if (editingEntryId) {
+        // Edit mode
+        const idx = journalEntries.findIndex(e => e.id === editingEntryId);
+        if (idx !== -1) {
+            journalEntries[idx].title = titleVal;
+            journalEntries[idx].content = contentVal;
+            journalEntries[idx].lastEdited = new Date().toISOString();
+            persistJournalEntries();
+            displayJournalEntries();
+            resetJournalForm();
+        }
+    } else {
+        // Add mode
+        const newEntry = {
+            id: createUniqueEntryId(),
+            title: titleVal,
+            content: contentVal,
+            created: new Date().toISOString()
+        };
+        journalEntries.unshift(newEntry);
+        persistJournalEntries();
+        displayJournalEntries();
+        resetJournalForm();
+    }
+});
 
-    blogPosts.unshift(newBlogPostBeingAdded);
-    saveBlogPostsToLocalStorage();
-    renderBlogPosts();
+// Handle edit and delete buttons
+journalEntriesContainer.addEventListener('click', function(event) {
+    if (event.target.classList.contains('editEntryBtn')) {
+        const entryId = event.target.getAttribute('data-entry-id');
+        const entry = journalEntries.find(en => en.id === entryId);
+        if (entry) {
+            journalTitleInput.value = entry.title;
+            journalContentInput.value = entry.content;
+            editingEntryId = entryId;
+            saveJournalBtn.textContent = 'Update Entry';
+            abortEditBtn.style.display = 'inline-block';
+            journalErrorMsg.textContent = '';
+        }
+    }
+    if (event.target.classList.contains('removeEntryBtn')) {
+        const entryId = event.target.getAttribute('data-entry-id');
+        journalEntries = journalEntries.filter(en => en.id !== entryId);
+        persistJournalEntries();
+        displayJournalEntries();
+        if (editingEntryId === entryId) resetJournalForm();
+    }
+});
 
-    blogPostInputForm.requestFullscreen();
-})
+// Cancel edit mode
+abortEditBtn.addEventListener('click', resetJournalForm);
 
-// Initial load of all blog posts
-loadBlogPostsFromLocalStorage();
-renderBlogPosts();
+// Initial load
+retrieveJournalEntries();
+displayJournalEntries();

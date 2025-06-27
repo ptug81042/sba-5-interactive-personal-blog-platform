@@ -46,6 +46,21 @@ button[type="submit"]:hover {
     background-color: #005fa3;
 }
 
+button[type="button"] {
+    background-color: #e0e0e0;
+    color: #333;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-left: 0.5rem;
+}
+
+button[type="button"]:hover {
+    background-color: #bdbdbd;
+}
+
 .error-message {
     color: #d8000c;
     margin-top: 0.5rem;
