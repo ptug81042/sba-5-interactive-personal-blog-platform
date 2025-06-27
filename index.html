@@ -7,6 +7,24 @@
         <title>Interactive Personal Blog Platform</title>
     </head>
     <body>
+        <main>
+            <h1>My Personal Blog</h1>
+            <form id="blogPostForm" autocomplete="off">
+                <div>
+                    <label for="postTitleInput">Enter Title: </label>
+                    <input type="text" name="postTitleInput" id="postTitleInput" required>
+                </div>
+                <div>
+                    <label for="postContentInput">Enter Content: </label>
+                    <textarea name="postContentInput" id="postContentInput" cols="30" rows="10" required></textarea>
+                </div>
+                <button type="submit" id="submitPostButton">Add Post</button>
+            </form>
+            <section>
+                <h2>All Posts</h2>
+                <div id="blogPostsContainer"></div>
+            </section>
+        </main>
         <script src="script.js"></script>
     </body>
 </html>
