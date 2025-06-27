@@ -1,7 +1,7 @@
 // DOM Elements
-const blogPostForm = document.getElementById('blogPostForm');
-const postTitleInput = document.getElementById('postTitleInput');
-const postContentInput = document.getElementById('postContentInput');
+const blogPostInputForm = document.getElementById('blogPostForm');
+const blogPostTitleInput = document.getElementById('postTitleInput');
+const blogPostContentInput = document.getElementById('postContentInput');
 const formErrorMessage = document.getElementById('formErrorMessage');
 const blogPostsContainer = document.getElementById('blogPostsContainer');
 
@@ -20,9 +20,9 @@ function saveBlogPostsToLocalStorage() {
 
 // Utility: Load posts from localStorage
 function loadBlogPostsFromLocalStorage() {
-    const postsFromLocalStorage = localStorage.getItem('blogPosts');
-    if (postsFromLocalStorage) {
-        blogPosts = JSON.parse(postsFromLocalStorage);
+    const blogPostsFromLocalStorage = localStorage.getItem('blogPosts');
+    if (blogPostsFromLocalStorage) {
+        blogPosts = JSON.parse(blogPostsFromLocalStorage);
     }
 }
 
@@ -39,6 +39,8 @@ function renderBlogPosts() {
         blogPostDiv.innerHTML = `
             <div class="blog-post-title">${blogPost.title}</div>
             <div class="blog-post-content">${blogPost.content}</div>
+            <button class="editBlogPostButton" data-post-id="${blogPost.blogPostId}">Edit Blog Post</button>
+            <button class="deleteBlogPostButton" data-post-id="${blogPost.blogPostId}">Delete Blog Post</button>
         `;
         blogPostsContainer.appendChild(blogPostDiv);
     });
@@ -49,10 +51,10 @@ blogPostForm.addEventListener('submit', function(event) {
     event.preventDefault();
     formErrorMessage.textContent = '';
 
-    const blogPostTitleValue = postTitleInput.value.trim();
-    const blogPostContentValue = postContentInput.value.trim();
+    const blogPostTitleValue = blogPostTitleInput.value.trim();
+    const blogPostContentValue = blogPostContentInput.value.trim();
 
-    if (!blogPostTitleValue || blogPostContentValue) {
+    if (!blogPostTitleValue || !blogPostContentValue) {
         formErrorMessage.textContent = 'Both title and content are required to create a post.';
         return;
     }
@@ -68,7 +70,7 @@ blogPostForm.addEventListener('submit', function(event) {
     saveBlogPostsToLocalStorage();
     renderBlogPosts();
 
-    blogPostForm.requestFullscreen();
+    blogPostInputForm.requestFullscreen();
 })
 
 // Initial load of all blog posts
