@@ -1,202 +1,243 @@
-// Journal Platform by Parsa - Enhanced unique implementation with UX improvements
 
-// DOM Elements
-const journalForm = document.getElementById('journalForm');
-const journalTitleInput = document.getElementById('journalTitleInput');
-const journalContentInput = document.getElementById('journalContentInput');
-const saveJournalBtn = document.getElementById('saveJournalBtn');
-const abortEditBtn = document.getElementById('abortEditBtn');
-const journalErrorMsg = document.getElementById('journalErrorMsg');
-const journalEntriesContainer = document.getElementById('journalEntriesContainer');
-const titleError = document.getElementById('titleError');
-const contentError = document.getElementById('contentError');
+// Interactive Personal Blog Platform - Full script.js with advanced features
 
-let journalEntries = [];
-let editingEntryId = null;
+class BlogPlatform {
+  constructor() {
+    // DOM Elements
+    this.journalForm = document.getElementById('journalForm');
+    this.titleInput = document.getElementById('journalTitleInput');
+    this.contentTextarea = document.getElementById('journalContentInput');
+    this.richTextEditor = document.getElementById('richTextEditor');
+    this.tagsInput = document.getElementById('journalTagsInput');
+    this.saveBtn = document.getElementById('saveJournalBtn');
+    this.abortBtn = document.getElementById('abortEditBtn');
+    this.errorMsg = document.getElementById('journalErrorMsg');
+    this.titleError = document.getElementById('titleError');
+    this.contentError = document.getElementById('contentError');
+    this.entriesContainer = document.getElementById('journalEntriesContainer');
+    this.noEntriesMsg = document.getElementById('noEntriesMsg');
+    this.toolbar = document.getElementById('toolbar');
+    this.exportBtn = document.getElementById('exportBtn');
+    this.importBtn = document.getElementById('importBtn');
+    this.importFileInput = document.getElementById('importFileInput');
+    this.toggleThemeBtn = document.getElementById('toggleThemeBtn');
+    this.welcomeMessage = document.getElementById('welcomeMessage');
 
-// Generate a unique ID for each entry
-function createUniqueEntryId() {
+    this.entries = [];
+    this.editingId = null;
+
+    this.init();
+  }
+
+  init() {
+    this.loadEntries();
+    this.renderEntries();
+    this.setupEventListeners();
+  }
+
+  setupEventListeners() {
+    this.journalForm.addEventListener('submit', (e) => this.handleSubmit(e));
+    this.abortBtn.addEventListener('click', () => this.resetForm());
+    this.entriesContainer.addEventListener('click', (e) => this.handleEntryActions(e));
+    this.toolbar.addEventListener('click', (e) => this.handleToolbarClick(e));
+    this.exportBtn.addEventListener('click', () => this.exportEntries());
+    this.importBtn.addEventListener('click', () => this.importFileInput.click());
+    this.importFileInput.addEventListener('change', (e) => this.handleImportFile(e));
+    this.toggleThemeBtn.addEventListener('click', () => this.toggleTheme());
+    this.richTextEditor.addEventListener('input', () => this.syncEditorContent());
+  }
+
+  generateId() {
     return 'entry-' + Date.now() + '-' + Math.floor(Math.random() * 99999);
-}
+  }
 
-// Save entries to localStorage
-function persistJournalEntries() {
-    localStorage.setItem('journalEntries', JSON.stringify(journalEntries));
-}
+  saveEntries() {
+    localStorage.setItem('blogEntries', JSON.stringify(this.entries));
+  }
 
-// Load entries from localStorage
-function retrieveJournalEntries() {
-    const stored = localStorage.getItem('journalEntries');
-    journalEntries = stored ? JSON.parse(stored) : [];
-}
+  loadEntries() {
+    const data = localStorage.getItem('blogEntries');
+    this.entries = data ? JSON.parse(data) : [];
+  }
 
-// Render all entries with buttons in a container
-function displayJournalEntries() {
-    journalEntriesContainer.innerHTML = '';
-    if (journalEntries.length === 0) {
-        journalEntriesContainer.innerHTML = '<p>No journal entries yet. Start by publishing your thoughts above!</p>';
-        return;
+  renderEntries() {
+    this.entriesContainer.innerHTML = '';
+    if (this.entries.length === 0) {
+      this.noEntriesMsg.style.display = 'block';
+      return;
     }
+    this.noEntriesMsg.style.display = 'none';
 
-    journalEntries.forEach(entry => {
-        const entryDiv = document.createElement('div');
-        entryDiv.className = 'blog-post';
+    this.entries.forEach((entry) => {
+      const post = document.createElement('article');
+      post.classList.add('blog-post');
+      post.dataset.id = entry.id;
 
-        // Format timestamps
-        const createdDate = new Date(entry.created);
-        const createdStr = createdDate.toLocaleString();
+      post.innerHTML = `
+        <h3 class="blog-post-title">${entry.title}</h3>
+        <div class="blog-post-content">${entry.content}</div>
+        ${entry.tags ? `<div class="blog-post-tags">Tags: ${entry.tags.join(', ')}</div>` : ''}
+        <div class="blog-post-actions">
+          <button class="editEntryBtn">Edit</button>
+          <button class="deleteEntryBtn">Delete</button>
+        </div>
+      `;
 
-        let lastEditedStr = '';
-        if (entry.lastEdited) {
-            const editedDate = new Date(entry.lastEdited);
-            lastEditedStr = ` (Edited: ${editedDate.toLocaleString()})`;
-        }
-
-        entryDiv.innerHTML = `
-            <div class="blog-post-title">${escapeHtml(entry.title)}</div>
-            <div class="blog-post-content">${escapeHtml(entry.content)}</div>
-            <div class="post-meta" style="font-size:0.8rem;color:#666;margin-bottom:0.8rem;">
-                Created: ${createdStr}${lastEditedStr}
-            </div>
-            <div class="post-buttons">
-                <button class="editEntryBtn" data-entry-id="${entry.id}" aria-label="Edit post titled ${escapeHtml(entry.title)}">Modify</button>
-                <button class="removeEntryBtn" data-entry-id="${entry.id}" aria-label="Delete post titled ${escapeHtml(entry.title)}">Erase</button>
-            </div>
-        `;
-        journalEntriesContainer.appendChild(entryDiv);
+      this.entriesContainer.appendChild(post);
     });
-}
+  }
 
-// Reset form and editing state with validation clears
-function resetJournalForm() {
-    journalForm.reset();
-    editingEntryId = null;
-    saveJournalBtn.textContent = 'Publish Entry';
-    abortEditBtn.style.display = 'none';
-    journalErrorMsg.textContent = '';
-    titleError.style.display = 'none';
-    contentError.style.display = 'none';
-    journalTitleInput.classList.remove('invalid');
-    journalContentInput.classList.remove('invalid');
-}
-
-// HTML escape helper for XSS safety
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// Form validation with inline feedback
-function validateForm() {
+  validateForm() {
     let valid = true;
+    this.titleError.textContent = '';
+    this.contentError.textContent = '';
 
-    // Title validation: required, min length 3
-    if (!journalTitleInput.value.trim()) {
-        titleError.textContent = 'Title is required.';
-        titleError.style.display = 'block';
-        journalTitleInput.classList.add('invalid');
-        valid = false;
-    } else if (journalTitleInput.value.trim().length < 3) {
-        titleError.textContent = 'Title must be at least 3 characters.';
-        titleError.style.display = 'block';
-        journalTitleInput.classList.add('invalid');
-        valid = false;
-    } else {
-        titleError.style.display = 'none';
-        journalTitleInput.classList.remove('invalid');
+    if (!this.titleInput.value.trim()) {
+      this.titleError.textContent = 'Title is required.';
+      valid = false;
     }
 
-    // Content validation: required, min length 10
-    if (!journalContentInput.value.trim()) {
-        contentError.textContent = 'Content is required.';
-        contentError.style.display = 'block';
-        journalContentInput.classList.add('invalid');
-        valid = false;
-    } else if (journalContentInput.value.trim().length < 10) {
-        contentError.textContent = 'Content must be at least 10 characters.';
-        contentError.style.display = 'block';
-        journalContentInput.classList.add('invalid');
-        valid = false;
-    } else {
-        contentError.style.display = 'none';
-        journalContentInput.classList.remove('invalid');
+    const contentText = this.richTextEditor.innerText.trim();
+    if (!contentText) {
+      this.contentError.textContent = 'Content cannot be empty.';
+      valid = false;
     }
 
     return valid;
+  }
+
+  handleSubmit(event) {
+    event.preventDefault();
+    this.errorMsg.textContent = '';
+
+    if (!this.validateForm()) return;
+
+    const title = this.titleInput.value.trim();
+    const content = this.richTextEditor.innerHTML.trim();
+    const tags = this.tagsInput.value
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t);
+
+    if (this.editingId) {
+      const idx = this.entries.findIndex((e) => e.id === this.editingId);
+      if (idx !== -1) {
+        this.entries[idx] = {
+          ...this.entries[idx],
+          title,
+          content,
+          tags,
+          lastEdited: new Date().toISOString(),
+        };
+      }
+    } else {
+      this.entries.unshift({
+        id: this.generateId(),
+        title,
+        content,
+        tags,
+        created: new Date().toISOString(),
+      });
+    }
+
+    this.saveEntries();
+    this.renderEntries();
+    this.resetForm();
+  }
+
+  resetForm() {
+    this.journalForm.reset();
+    this.richTextEditor.innerHTML = '';
+    this.editingId = null;
+    this.abortBtn.style.display = 'none';
+    this.saveBtn.textContent = 'Publish Entry';
+    this.titleError.textContent = '';
+    this.contentError.textContent = '';
+  }
+
+  handleEntryActions(e) {
+    const entryEl = e.target.closest('.blog-post');
+    if (!entryEl) return;
+    const id = entryEl.dataset.id;
+
+    if (e.target.classList.contains('editEntryBtn')) {
+      const entry = this.entries.find((en) => en.id === id);
+      if (entry) {
+        this.titleInput.value = entry.title;
+        this.richTextEditor.innerHTML = entry.content;
+        this.tagsInput.value = entry.tags ? entry.tags.join(', ') : '';
+        this.editingId = id;
+        this.abortBtn.style.display = 'inline-block';
+        this.saveBtn.textContent = 'Update Entry';
+      }
+    }
+
+    if (e.target.classList.contains('deleteEntryBtn')) {
+      this.entries = this.entries.filter((en) => en.id !== id);
+      this.saveEntries();
+      this.renderEntries();
+      if (this.editingId === id) this.resetForm();
+    }
+  }
+
+  handleToolbarClick(e) {
+    if (e.target.dataset.command) {
+      document.execCommand(e.target.dataset.command, false, null);
+      this.syncEditorContent();
+    }
+  }
+
+  syncEditorContent() {
+    this.contentTextarea.value = this.richTextEditor.innerHTML;
+  }
+
+  exportEntries() {
+    const dataStr = JSON.stringify(this.entries, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'blog-posts.json';
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  handleImportFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const imported = JSON.parse(evt.target.result);
+        if (Array.isArray(imported)) {
+          this.entries = imported;
+          this.saveEntries();
+          this.renderEntries();
+        } else {
+          alert('Invalid file format');
+        }
+      } catch {
+        alert('Failed to parse JSON file');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    this.toggleThemeBtn.setAttribute('aria-pressed', isDark);
+    localStorage.setItem('darkMode', isDark ? '1' : '0');
+  }
+
+  applySavedTheme() {
+    const saved = localStorage.getItem('darkMode');
+    if (saved === '1') {
+      document.body.classList.add('dark-mode');
+      this.toggleThemeBtn.setAttribute('aria-pressed', 'true');
+    }
+  }
 }
 
-// Handle form submission for add/edit
-journalForm.addEventListener('submit', function(event) {
-    event.preventDefault();
-    journalErrorMsg.textContent = '';
-
-    if (!validateForm()) {
-        journalErrorMsg.textContent = 'Please correct the highlighted errors before submitting.';
-        return;
-    }
-
-    const titleVal = journalTitleInput.value.trim();
-    const contentVal = journalContentInput.value.trim();
-
-    if (editingEntryId) {
-        // Edit mode
-        const idx = journalEntries.findIndex(e => e.id === editingEntryId);
-        if (idx !== -1) {
-            journalEntries[idx].title = titleVal;
-            journalEntries[idx].content = contentVal;
-            journalEntries[idx].lastEdited = new Date().toISOString();
-            persistJournalEntries();
-            displayJournalEntries();
-            resetJournalForm();
-        }
-    } else {
-        // Add mode
-        const newEntry = {
-            id: createUniqueEntryId(),
-            title: titleVal,
-            content: contentVal,
-            created: new Date().toISOString()
-        };
-        journalEntries.unshift(newEntry);
-        persistJournalEntries();
-        displayJournalEntries();
-        resetJournalForm();
-    }
-});
-
-// Handle edit and delete buttons using event delegation
-journalEntriesContainer.addEventListener('click', function(event) {
-    if (event.target.classList.contains('editEntryBtn')) {
-        const entryId = event.target.getAttribute('data-entry-id');
-        const entry = journalEntries.find(en => en.id === entryId);
-        if (entry) {
-            journalTitleInput.value = entry.title;
-            journalContentInput.value = entry.content;
-            editingEntryId = entryId;
-            saveJournalBtn.textContent = 'Update Entry';
-            abortEditBtn.style.display = 'inline-block';
-            journalErrorMsg.textContent = '';
-            titleError.style.display = 'none';
-            contentError.style.display = 'none';
-            journalTitleInput.classList.remove('invalid');
-            journalContentInput.classList.remove('invalid');
-        }
-    }
-    if (event.target.classList.contains('removeEntryBtn')) {
-        if (confirm('Are you sure you want to delete this entry?')) {
-            const entryId = event.target.getAttribute('data-entry-id');
-            journalEntries = journalEntries.filter(en => en.id !== entryId);
-            persistJournalEntries();
-            displayJournalEntries();
-            if (editingEntryId === entryId) resetJournalForm();
-        }
-    }
-});
-
-// Cancel edit mode
-abortEditBtn.addEventListener('click', resetJournalForm);
-
-// Initial load
-retrieveJournalEntries();
-displayJournalEntries();
+document.addEventListener('DOMContentLoaded', () => new BlogPlatform());
