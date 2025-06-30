@@ -1,32 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="styles.css">
-        <title>Interactive Personal Blog Platform</title>
-    </head>
-    <body>
-        <main>
-            <h1>My Personal Blog</h1>
-            <form id="journalForm" autocomplete="off">
-                <div>
-                    <label for="journalTitleInput">Post Title:</label>
-                    <input type="text" name="journalTitleInput" id="journalTitleInput" required>
-                </div>
-                <div>
-                    <label for="journalContentInput">Post Content:</label>
-                    <textarea name="journalContentInput" id="journalContentInput" cols="30" rows="10" required></textarea>
-                </div>
-                <button type="submit" id="saveJournalBtn">Publish Entry</button>
-                <button type="button" id="abortEditBtn" style="display:none;">Cancel Edit</button>
-                <div id="journalErrorMsg" class="error-message"></div>
-            </form>
-            <section>
-                <h2>All Entries</h2>
-                <div id="journalEntriesContainer"></div>
-            </section>
-        </main>
-        <script src="script.js"></script>
-    </body>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Interactive Personal Blog Platform</title>
+</head>
+<body>
+    <main>
+        <h1>My Personal Blog</h1>
+        <form id="journalForm" autocomplete="off" novalidate>
+            <div>
+                <label for="journalTitleInput">Post Title:</label>
+                <input type="text" name="journalTitleInput" id="journalTitleInput" required minlength="3" />
+                <span class="validation-message" id="titleError"></span>
+            </div>
+            <div>
+                <label for="journalContentInput">Post Content:</label>
+                <textarea name="journalContentInput" id="journalContentInput" cols="30" rows="10" required minlength="10"></textarea>
+                <span class="validation-message" id="contentError"></span>
+            </div>
+            <button type="submit" id="saveJournalBtn">Publish Entry</button>
+            <button type="button" id="abortEditBtn" style="display:none;">Cancel Edit</button>
+            <div id="journalErrorMsg" class="error-message"></div>
+        </form>
+        <section>
+            <h2>All Entries</h2>
+            <div id="journalEntriesContainer"></div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
 </html>
