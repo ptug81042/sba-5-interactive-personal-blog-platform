@@ -84,8 +84,13 @@ header {
 }
 
 form#journalForm {
-  flex: 1 1 50%;
-  min-width: 300px;
+  flex: 1 1 40%;
+  min-width: 180px;
+  max-width: 340px;
+  padding: 0.7rem 0.5rem;
+  background: none;
+  border-radius: 6px;
+  font-size: 0.97rem;
 }
 
 section#postsSection {
@@ -94,28 +99,21 @@ section#postsSection {
 }
 
 form > .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 0.6rem;
 }
 
 label {
-  display: block;
-  margin-bottom: 0.3rem;
-  font-weight: 600;
+  margin-bottom: 0.15rem;
+  font-size: 0.97rem;
 }
 
 input[type="text"],
 textarea,
 #richTextEditor {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1.5px solid var(--input-border);
-  border-radius: 5px;
-  font-size: 1rem;
-  background-color: var(--input-bg);
-  color: var(--text-color);
-  transition: border-color 0.3s ease;
-  min-height: 120px;
-  resize: vertical;
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.97rem;
+  min-height: 60px;
 }
 
 input[type="text"]:focus,
@@ -127,9 +125,9 @@ textarea:focus,
 }
 
 #richTextEditor {
-  min-height: 150px;
+  min-height: 70px;
   white-space: pre-wrap;
-  overflow-y: auto;
+  overflow: visible; /* was overflow-y: auto */
   background-color: var(--input-bg);
   border: 1.5px solid var(--input-border);
 }
@@ -152,7 +150,7 @@ textarea:focus,
   background-color: var(--btn-bg);
   color: var(--btn-text);
   font-weight: 700;
-  padding: 0.3rem 0.6rem;
+  padding: 0.35rem 0.7rem;
   border-radius: 4px;
   cursor: pointer;
   user-select: none;
@@ -167,9 +165,9 @@ textarea:focus,
 
 .form-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.3rem;
   flex-wrap: wrap;
-  margin-bottom: 1rem;
+  margin-bottom: 0.7rem;
 }
 
 .form-actions button {
