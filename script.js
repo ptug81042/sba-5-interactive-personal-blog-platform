@@ -3,7 +3,6 @@
 
 class BlogPlatform {
   constructor() {
-    // DOM Elements
     this.journalForm = document.getElementById('journalForm');
     this.titleInput = document.getElementById('journalTitleInput');
     this.contentTextarea = document.getElementById('journalContentInput');
@@ -22,10 +21,11 @@ class BlogPlatform {
     this.importFileInput = document.getElementById('importFileInput');
     this.toggleThemeBtn = document.getElementById('toggleThemeBtn');
     this.welcomeMessage = document.getElementById('welcomeMessage');
-
+  
     this.entries = [];
     this.editingId = null;
-
+  
+    this.applySavedTheme(); // ← Added here
     this.init();
   }
 
@@ -233,10 +233,10 @@ class BlogPlatform {
 
   applySavedTheme() {
     const saved = localStorage.getItem('darkMode');
-    if (saved === '1') {
-      document.body.classList.add('dark-mode');
-      this.toggleThemeBtn.setAttribute('aria-pressed', 'true');
-    }
+    const isDark = saved === '1';
+    document.body.classList.toggle('dark-mode', isDark);
+    this.toggleThemeBtn.setAttribute('aria-pressed', isDark);
+    this.toggleThemeBtn.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
   }
 }
 
