@@ -1,197 +1,138 @@
 class BlogPlatform {
-  constructor() {
+  constructor(){
+    this.toggleBtn = document.getElementById('toggleThemeBtn');
+    this.toggleBtn.addEventListener('click', ()=>this.toggleTheme());
+    this.applySavedTheme();
+
     this.journalForm = document.getElementById('journalForm');
     this.titleInput = document.getElementById('journalTitleInput');
     this.richTextEditor = document.getElementById('richTextEditor');
-    this.contentTextarea = document.getElementById('journalContentInput');
+    this.contentArea = document.getElementById('journalContentInput');
     this.tagsInput = document.getElementById('journalTagsInput');
-    this.saveBtn = document.getElementById('saveJournalBtn');
-    this.abortBtn = document.getElementById('abortEditBtn');
     this.entriesContainer = document.getElementById('journalEntriesContainer');
     this.noEntriesMsg = document.getElementById('noEntriesMsg');
     this.toolbar = document.getElementById('toolbar');
-    this.exportBtn = document.getElementById('exportBtn');
-    this.importBtn = document.getElementById('importBtn');
-    this.importFileInput = document.getElementById('importFileInput');
-    this.toggleThemeBtn = document.getElementById('toggleThemeBtn');
 
-    this.entries = [];
-    this.editingId = null;
+    this.entries = []; this.editId = null;
 
-    this.applySavedTheme();
-    this.init();
-  }
-
-  init() {
-    this.loadEntries();
-    this.renderEntries();
-
-    this.journalForm.addEventListener('submit', e => this.handleSubmit(e));
-    this.abortBtn.addEventListener('click', () => this.resetForm());
-    this.entriesContainer.addEventListener('click', e => this.handleEntryActions(e));
-    this.toolbar.addEventListener('click', e => {
-      if (e.target.dataset.command) {
-        document.execCommand(e.target.dataset.command);
-        this.syncEditor();
+    this.journalForm.addEventListener('submit', e=>this.handleSubmit(e));
+    this.toolbar.addEventListener('click', e=> {
+      const cmd = e.target.dataset.command;
+      if(cmd){
+        document.execCommand(cmd);
+        this.sync();
       }
     });
-    this.richTextEditor.addEventListener('input', () => this.syncEditor());
-    this.exportBtn.addEventListener('click', () => this.exportEntries());
-    this.importBtn.addEventListener('click', () => this.importFileInput.click());
-    this.importFileInput.addEventListener('change', e => this.handleImport(e));
-    this.toggleThemeBtn.addEventListener('click', () => this.toggleTheme());
+    this.richTextEditor.addEventListener('input', ()=>this.sync());
+
+    document.getElementById('importBtn').addEventListener('click', ()=>document.getElementById('importFileInput').click());
+    document.getElementById('importFileInput').addEventListener('change', e=>this.handleImport(e));
+    document.getElementById('exportBtn').addEventListener('click', ()=>this.export());
+    this.entriesContainer.addEventListener('click', e=>this.handleEntryClick(e));
+
+    this.load(); this.render();
   }
 
-  applySavedTheme() {
-    const dark = localStorage.getItem('darkMode') === '1';
+  applySavedTheme(){
+    const dark = localStorage.getItem('darkMode')==='1';
     document.body.classList.toggle('dark-mode', dark);
-    this.toggleThemeBtn.setAttribute('aria-pressed', dark);
-    this.toggleThemeBtn.textContent = dark ? '☀️ Light Mode' : '🌙 Dark Mode';
+    this.toggleBtn.setAttribute('aria-pressed', dark);
+    this.toggleBtn.textContent = dark?'☀️ Light Mode':'🌙 Dark Mode';
   }
 
-  toggleTheme() {
+  toggleTheme(){
     const dark = document.body.classList.toggle('dark-mode');
-    this.toggleThemeBtn.setAttribute('aria-pressed', dark);
-    this.toggleThemeBtn.textContent = dark ? '☀️ Light Mode' : '🌙 Dark Mode';
-    localStorage.setItem('darkMode', dark ? '1' : '0');
+    this.toggleBtn.setAttribute('aria-pressed', dark);
+    this.toggleBtn.textContent = dark?'☀️ Light Mode':'🌙 Dark Mode';
+    localStorage.setItem('darkMode', dark?'1':'0');
   }
 
-  generateId() {
-    return 'entry-' + Date.now() + Math.floor(Math.random() * 10000);
+  sync(){
+    this.contentArea.value = this.richTextEditor.innerHTML;
   }
 
-  syncEditor() {
-    this.contentTextarea.value = this.richTextEditor.innerHTML;
-  }
-
-  validate() {
-    let ok = true;
-    document.getElementById('titleError').textContent = '';
-    document.getElementById('contentError').textContent = '';
-
-    if (!this.titleInput.value.trim()) {
-      document.getElementById('titleError').textContent = 'Title required.';
-      ok = false;
-    }
-    if (!this.richTextEditor.innerText.trim()) {
-      document.getElementById('contentError').textContent = 'Content cannot be empty.';
-      ok = false;
-    }
+  validate(){
+    let ok=true;
+    document.getElementById('titleError').textContent='';
+    document.getElementById('contentError').textContent='';
+    if(!this.titleInput.value.trim()){document.getElementById('titleError').textContent='Required'; ok=false;}
+    if(!this.richTextEditor.innerText.trim()){document.getElementById('contentError').textContent='Required'; ok=false;}
     return ok;
   }
 
-  handleSubmit(e) {
-    e.preventDefault();
-    if (!this.validate()) return;
+  handleSubmit(e){
+    e.preventDefault(); if(!this.validate())return;
 
-    const data = {
-      id: this.editingId || this.generateId(),
-      title: this.titleInput.value.trim(),
-      content: this.richTextEditor.innerHTML,
-      tags: this.tagsInput.value.split(',').map(t => t.trim()).filter(Boolean),
-      time: new Date().toISOString()
+    const entry = {
+      id: this.editId||('id-'+Date.now()),
+      title:this.titleInput.value.trim(),
+      content:this.richTextEditor.innerHTML,
+      tags:this.tagsInput.value.split(',').map(s=>s.trim()).filter(Boolean),
+      ts: new Date().toISOString()
     };
+    if(this.editId){
+      this.entries = this.entries.map(x=>x.id===entry.id?entry:x);
+    } else this.entries.unshift(entry);
 
-    if (this.editingId) {
-      this.entries = this.entries.map(en => en.id === data.id ? data : en);
-    } else {
-      this.entries.unshift(data);
-    }
-
-    this.saveEntries();
-    this.renderEntries();
-    this.resetForm();
+    this.save(); this.render(); this.resetForm();
   }
 
-  handleEntryActions(e) {
-    const el = e.target;
-    const entryEl = el.closest('.blog-post');
-    if (!entryEl) return;
-    const id = entryEl.dataset.id;
-
-    if (el.textContent === 'Edit') {
-      const en = this.entries.find(x => x.id === id);
+  handleEntryClick(e){
+    const btn=e.target;
+    const article=btn.closest('.blog-post'); if(!article) return;
+    const id=article.dataset.id;
+    if(btn.textContent==='Edit'){
+      const en = this.entries.find(x=>x.id===id);
       this.titleInput.value = en.title;
       this.richTextEditor.innerHTML = en.content;
       this.tagsInput.value = en.tags.join(', ');
-      this.editingId = id;
-      this.abortBtn.style.display = 'inline-block';
-      this.saveBtn.textContent = 'Update Entry';
+      this.editId = id;
+      document.getElementById('saveJournalBtn').textContent='Update';
     }
-
-    if (el.textContent === 'Delete') {
-      this.entries = this.entries.filter(x => x.id !== id);
-      this.saveEntries();
-      this.renderEntries();
-      if (this.editingId === id) this.resetForm();
+    if(btn.textContent==='Delete'){
+      this.entries = this.entries.filter(x=>x.id!==id);
+      this.save(); this.render(); this.resetForm();
     }
   }
 
-  resetForm() {
+  resetForm(){
     this.journalForm.reset();
     this.richTextEditor.innerHTML = '';
-    this.editingId = null;
-    this.abortBtn.style.display = 'none';
-    this.saveBtn.textContent = 'Publish Entry';
-    this.syncEditor();
+    this.editId = null;
+    document.getElementById('saveJournalBtn').textContent='Publish Entry';
   }
 
-  renderEntries() {
-    this.entriesContainer.innerHTML = '';
-    if (!this.entries.length) {
-      this.noEntriesMsg.style.display = 'block';
-      return;
+  render(){
+    this.entriesContainer.innerHTML='';
+    if(!this.entries.length){
+      this.noEntriesMsg.style.display='block'; return;
     }
-    this.noEntriesMsg.style.display = 'none';
-
-    this.entries.forEach(en => {
-      const a = document.createElement('article');
-      a.className = 'blog-post';
-      a.dataset.id = en.id;
-      a.innerHTML = `
-        <h3 class="blog-post-title">${en.title}</h3>
-        <div class="blog-post-content">${en.content}</div>
-        ${en.tags.length ? `<div class="blog-post-content"><em>Tags: ${en.tags.join(', ')}</em></div>` : ''}
+    this.noEntriesMsg.style.display='none';
+    this.entries.forEach(en=>{
+      const art=document.createElement('article');
+      art.className='blog-post'; art.dataset.id=en.id;
+      art.innerHTML=`
+        <h3>${en.title}</h3>
+        <div>${en.content}</div>
+        ${en.tags.length?`<div><em>Tags: ${en.tags.join(', ')}</em></div>`:''}
         <div class="blog-post-actions">
-          <button>Edit</button>
-          <button>Delete</button>
-        </div>
-      `;
-      this.entriesContainer.appendChild(a);
+          <button>Edit</button><button>Delete</button>
+        </div>`;
+      this.entriesContainer.appendChild(art);
     });
   }
 
-  saveEntries() {
-    localStorage.setItem('blogEntries', JSON.stringify(this.entries));
-  }
-
-  loadEntries() {
-    const data = localStorage.getItem('blogEntries');
-    this.entries = data ? JSON.parse(data) : [];
-  }
-
-  exportEntries() {
-    const blob = new Blob([JSON.stringify(this.entries, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'posts.json'; a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  handleImport(e) {
-    const f = e.target.files[0];
-    if (!f) return;
-    const r = new FileReader();
-    r.onload = () => {
-      const imp = JSON.parse(r.result);
-      if (Array.isArray(imp)) {
-        this.entries = imp;
-        this.saveEntries();
-        this.renderEntries();
-      } else alert('Invalid file');
-    };
-    r.readAsText(f);
+  save(){ localStorage.setItem('blogEntries', JSON.stringify(this.entries)); }
+  load(){ const d=localStorage.getItem('blogEntries'); this.entries = d?JSON.parse(d):[]; }
+  export(){ const blob=new Blob([JSON.stringify(this.entries,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='posts.json'; a.click(); }
+  handleImport(e){
+    const f=e.target.files[0]; if(!f)return;
+    const r=new FileReader(); r.onload=()=> {
+      const arr = JSON.parse(r.result);
+      if(Array.isArray(arr)){this.entries=arr; this.save(); this.render();}
+      else alert('bad file');
+    }; r.readAsText(f);
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => new BlogPlatform());
+document.addEventListener('DOMContentLoaded', ()=>new BlogPlatform());
