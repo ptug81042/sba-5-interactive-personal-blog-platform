@@ -3,63 +3,79 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>My Personal Blog</title>
+  <title>Interactive Personal Blog Platform</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header>
-    <h1>My Personal Blog</h1>
-    <p id="welcomeMessage" aria-live="polite"></p>
-    <button id="toggleThemeBtn" aria-pressed="false">🌙 Dark Mode</button>
-  </header>
+  <main role="main" aria-label="Personal blog platform">
+    <header>
+      <h1>My Personal Blog</h1>
+      <p id="welcomeMessage" aria-live="polite"></p>
+      <button id="toggleThemeBtn" aria-pressed="false" aria-label="Toggle dark mode">🌙 Dark Mode</button>
+    </header>
 
-  <div class="content-wrapper">
-    <form id="journalForm" novalidate>
-      <!-- Form fields as before -->
-      <p id="formInstructions">Create a new post...</p>
-      <!-- Title -->
-      <div class="form-group">
-        <label for="journalTitleInput">Title*</label>
-        <input id="journalTitleInput" required /><span id="titleError" class="error-message"></span>
-      </div>
-      <!-- Content -->
-      <div class="form-group">
-        <label>Content*</label>
-        <div id="richTextEditor" contenteditable="true"></div>
-        <textarea id="journalContentInput" hidden required></textarea>
-        <span id="contentError" class="error-message"></span>
-      </div>
-      <!-- Tags -->
-      <div class="form-group">
-        <label for="journalTagsInput">Tags</label>
-        <input id="journalTagsInput" placeholder="e.g. ideas, travel" />
-      </div>
+    <div id="formAndPostsWrapper">
+      <form id="journalForm" autocomplete="off" aria-describedby="formInstructions" novalidate>
+        <p id="formInstructions">Create a new post or edit an existing one. Title, content, and optional tags required.</p>
 
-      <div id="toolbar">
-        <button type="button" data-command="bold"><b>B</b></button>
-        <button type="button" data-command="italic"><i>I</i></button>
-        <button type="button" data-command="underline"><u>U</u></button>
-        <button type="button" data-command="insertOrderedList">1.</button>
-        <button type="button" data-command="insertUnorderedList">&bull;</button>
-      </div>
+        <div class="form-group">
+          <label for="journalTitleInput">Post Title<span aria-hidden="true">*</span></label>
+          <input
+            type="text"
+            id="journalTitleInput"
+            name="journalTitleInput"
+            required
+            aria-required="true"
+            aria-describedby="titleError"
+          />
+          <span id="titleError" class="error-message" aria-live="assertive"></span>
+        </div>
 
-      <div class="form-actions">
-        <button type="submit" id="saveJournalBtn">Publish Entry</button>
-        <button type="button" id="abortEditBtn" style="display:none;">Cancel Edit</button>
-        <button type="button" id="exportBtn">Export Posts</button>
-        <button type="button" id="importBtn">Import Posts</button>
-        <input type="file" id="importFileInput" accept="application/json" hidden />
-      </div>
+        <div class="form-group">
+          <label for="journalContentInput">Post Content<span aria-hidden="true">*</span></label>
+          <div id="richTextEditor" contenteditable="true" aria-multiline="true" role="textbox" aria-required="true"></div>
+          <textarea id="journalContentInput" name="journalContentInput" hidden required aria-hidden="true"></textarea>
+          <span id="contentError" class="error-message" aria-live="assertive"></span>
+        </div>
 
-      <div id="journalErrorMsg" class="error-message"></div>
-    </form>
+        <div class="form-group">
+          <label for="journalTagsInput">Tags (comma separated)</label>
+          <input
+            type="text"
+            id="journalTagsInput"
+            name="journalTagsInput"
+            placeholder="e.g. life, ideas, work"
+            aria-describedby="tagsInfo"
+          />
+          <small id="tagsInfo">Optional tags to categorize your post.</small>
+        </div>
 
-    <section id="postsSection">
-      <h2>All Entries</h2>
-      <div id="journalEntriesContainer" role="list"></div>
-      <p id="noEntriesMsg">No posts yet.</p>
-    </section>
-  </div>
+        <div id="toolbar" role="toolbar" aria-label="Text formatting options">
+          <button type="button" data-command="bold" aria-label="Bold"><b>B</b></button>
+          <button type="button" data-command="italic" aria-label="Italic"><i>I</i></button>
+          <button type="button" data-command="underline" aria-label="Underline"><u>U</u></button>
+          <button type="button" data-command="insertOrderedList" aria-label="Numbered list">1.</button>
+          <button type="button" data-command="insertUnorderedList" aria-label="Bullet list">&bull;</button>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" id="saveJournalBtn">Publish Entry</button>
+          <button type="button" id="abortEditBtn" style="display:none;">Cancel Edit</button>
+          <button type="button" id="exportBtn">Export Posts</button>
+          <button type="button" id="importBtn">Import Posts</button>
+          <input type="file" id="importFileInput" accept="application/json" hidden />
+        </div>
+
+        <div id="journalErrorMsg" class="error-message" aria-live="assertive"></div>
+      </form>
+
+      <section aria-label="Blog posts" id="postsSection">
+        <h2>All Entries</h2>
+        <div id="journalEntriesContainer" role="list" tabindex="0"></div>
+        <p id="noEntriesMsg">No journal entries yet. Start by publishing your thoughts above!</p>
+      </section>
+    </div>
+  </main>
 
   <script type="module" src="script.js"></script>
 </body>
