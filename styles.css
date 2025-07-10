@@ -264,3 +264,32 @@ textarea:focus,
     width: 100%;
   }
 }
+
+.content-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: space-between;
+}
+
+#journalForm {
+  flex: 1 1 380px;
+  min-width: 320px;
+}
+
+#postsSection {
+  flex: 1 1 300px;
+  min-width: 280px;
+}
+
+@media (max-width: 800px) {
+  .content-wrapper {
+    flex-direction: column;
+  }
+}
+
+#toggleThemeBtn:hover,
+#toggleThemeBtn[aria-pressed="true"] {
+  color: var(--primary-color-hover);
+  text-decoration: underline;
+}
