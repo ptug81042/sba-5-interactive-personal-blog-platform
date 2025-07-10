@@ -225,10 +225,10 @@ class BlogPlatform {
   }
 
   toggleTheme() {
-    document.body.classList.toggle('dark-mode');
-    const isDark = document.body.classList.contains('dark-mode');
-    this.toggleThemeBtn.setAttribute('aria-pressed', isDark);
-    localStorage.setItem('darkMode', isDark ? '1' : '0');
+      const isNowDark = document.body.classList.toggle('dark-mode');
+      this.toggleThemeBtn.setAttribute('aria-pressed', isNowDark);
+      this.toggleThemeBtn.textContent = isNowDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+      localStorage.setItem('darkMode', isNowDark ? '1' : '0');
   }
 
   applySavedTheme() {
